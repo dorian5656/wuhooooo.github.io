@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="上节回顾：&amp;emsp;&amp;emsp;&amp;emsp;在上一节中，我们知道CRF层可以从训练数据集中自动学习到一些约束规则来保证预测标签的合法性。 &amp;emsp;&amp;emsp;&amp;emsp;这些约束包括： &amp;emsp;&amp;emsp;&amp;emsp;I：句子中第一个词总是以标签“B-“ 或 “O”开始，而不是“I-” &amp;emsp;&amp;emsp;&amp;emsp;II：标签“B-label1 &amp;emsp;&amp;emsp;&amp;emsp;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="BiLSTM模型中CRF层的运行原理-2">
+<meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2019&#x2F;10&#x2F;29&#x2F;BiLSTM%E6%A8%A1%E5%9E%8B%E4%B8%ADCRF%E5%B1%82%E7%9A%84%E8%BF%90%E8%A1%8C%E5%8E%9F%E7%90%86-2&#x2F;index.html">
+<meta property="og:site_name" content="数据处理中心">
+<meta property="og:description" content="上节回顾：&amp;emsp;&amp;emsp;&amp;emsp;在上一节中，我们知道CRF层可以从训练数据集中自动学习到一些约束规则来保证预测标签的合法性。 &amp;emsp;&amp;emsp;&amp;emsp;这些约束包括： &amp;emsp;&amp;emsp;&amp;emsp;I：句子中第一个词总是以标签“B-“ 或 “O”开始，而不是“I-” &amp;emsp;&amp;emsp;&amp;emsp;II：标签“B-label1 &amp;emsp;&amp;emsp;&amp;emsp;">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https:&#x2F;&#x2F;img-blog.csdnimg.cn&#x2F;20191029174622723.png">
+<meta property="og:image" content="https:&#x2F;&#x2F;img-blog.csdnimg.cn&#x2F;20191029175218573.png">
+<meta property="og:image" content="https:&#x2F;&#x2F;img-blog.csdnimg.cn&#x2F;20191029193001850.png">
+<meta property="og:image" content="https:&#x2F;&#x2F;img-blog.csdnimg.cn&#x2F;20191029193508950.png">
+<meta property="og:updated_time" content="2019-10-29T11:54:22.533Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https:&#x2F;&#x2F;img-blog.csdnimg.cn&#x2F;20191029174622723.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2019/10/29/BiLSTM模型中CRF层的运行原理-2/"/>
+
+
+
+
+
+  <title>BiLSTM模型中CRF层的运行原理-2 | 数据处理中心</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">数据处理中心</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/10/29/BiLSTM%E6%A8%A1%E5%9E%8B%E4%B8%ADCRF%E5%B1%82%E7%9A%84%E8%BF%90%E8%A1%8C%E5%8E%9F%E7%90%86-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="John Doe">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="数据处理中心">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">BiLSTM模型中CRF层的运行原理-2</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2019-10-29T17:11:10+08:00">
+                2019-10-29
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="上节回顾："><a href="#上节回顾：" class="headerlink" title="上节回顾："></a>上节回顾：</h2><p>&emsp;&emsp;&emsp;在上一节中，我们知道CRF层可以从训练数据集中自动学习到一些约束规则来保证预测标签的合法性。</p>
+<p>&emsp;&emsp;&emsp;这些约束包括：</p>
+<p>&emsp;&emsp;&emsp;I：句子中第一个词总是以标签“B-“ 或 “O”开始，而不是“I-”</p>
+<p>&emsp;&emsp;&emsp;II：标签“B-label1</p>
+<p>&emsp;&emsp;&emsp;I-label2 I-label3 I-…”,label1, label2, label3应该属于同一类实体。例如，“B-Person</p>
+<p>&emsp;&emsp;&emsp;I-Person” 是合法的序列, 但是“B-Person I-Organization” 是非法标签序列.</p>
+<p>&emsp;&emsp;&emsp;III：标签序列“O I-label” is 非法的.实体标签的首个标签应该是 “B-“ ，而非 “I-“, 换句话说,有效的标签序列应该是“O B-label”。</p>
+<p>&emsp;&emsp;&emsp;这一小节，我们将会讲述为什么CRF会学习到这些约束规则。</p>
+<h2 id="1-CRF层"><a href="#1-CRF层" class="headerlink" title="1.CRF层"></a>1.CRF层</h2><p>&emsp;&emsp;&emsp;在CRF层损失函数中，有两种形式的概率。这些分值是CRF层的关键概念。</p>
+<h2 id="1-1-Emission-Score"><a href="#1-1-Emission-Score" class="headerlink" title="1.1 Emission Score"></a>1.1 Emission Score</h2><p>&emsp;&emsp;&emsp;在 CRF 层的 Loss Function(损失函数) 中，我们有两种 Score(分值) ，Emission Score(输入分值) 和 Transition Score(过渡分值) 它们是 CRF 层的关键。</p>
+<p>&emsp;&emsp;&emsp;第一个是Emission Score。这些Emission Score来自BiLSTM层。如图2.1所示，<br>w0的得分标为B-Person的是1.5。</p>
+<p>&emsp;&emsp;&emsp;<img src="https://img-blog.csdnimg.cn/20191029174622723.png" alt="图2-1"></p>
+<p>&emsp;&emsp;&emsp; 为了方便理解，在这里给每个 label 一个索引标签：</p>
+<p>&emsp;&emsp;&emsp; <img src="https://img-blog.csdnimg.cn/20191029175218573.png" alt="图2-2"></p>
+<p>&emsp;&emsp;&emsp;我们使用x<sub>i</sub>,y<sub>j</sub>表示Emission Score，i 是 word 的 index， y<sub>j</sub>是 label 的 index。譬如，依据上面的图可以得到,x<sub>i</sub>=1，y<sub>j</sub>=2=x<sub>w1</sub>    ,B-O<sub>rganization</sub>的score为0.1。</p>
+<p>##2.2 Transition Score</p>
+<p>&emsp;&emsp;&emsp;对于 Transition Score ，我们使用t<sub>yjyj</sub>表示。譬如，t<sub>B-P<sub>ersion</sub>，I-P<sub>ersion</sub> = 0.9</sub>,意思就是标签 B-Persion 转移到 I-Person 的 score 为 0.9。这样的话，我们便拥有了一个 转移矩阵，其中存储着所有标签之间的 Transition Score。</p>
+<p>&emsp;&emsp;&emsp;为了使得转移分数矩阵更加具有鲁棒性，我们得添加一些标签，START 和 END。START 表示句子的起始，并不是句子的第一个 word；END 表示句子的结束。<br>&emsp;&emsp;&emsp; </p>
+<p>&emsp;&emsp;&emsp;这里就是一个 transition matrix score 的例子，其中包含了我们额外添加的START 和 END 标签。</p>
+<p>&emsp;&emsp;&emsp;图2-3.为增加标签后的转移概率的例子。</p>
+<p>&emsp;&emsp;&emsp;<img src="https://img-blog.csdnimg.cn/20191029193001850.png" alt="图2-3"></p>
+<p>&emsp;&emsp;&emsp;如上图所示，我们能够发现这个状态转移举证已经学习到了某些约束了。</p>
+<p>&emsp;&emsp;&emsp;句子中的第一个单词的标记应该是以“B-“ 或者 “O”开头, 并不会是 “I-”形式的标记。（可以从表中发现， “START” 到 “I-Person or I-Organization” 的转移值非常的小。）</p>
+<p>&emsp;&emsp;&emsp;在“B-label1 I-label2 I-label3 I-…”这样形式的标注序列中， label1, label2, label3 … 应该是同种实体的标签。比如，“B-Person I-Person” 是合理有效的标注序列，而 “B-Person I-Organization” 则不是。(譬如, the score from “B-Organization” to “I-Person” is only 0.0003 which is much lower than the others.)</p>
+<p>&emsp;&emsp;&emsp;“O I-label” is invalid. The first label of one named entity should start with “B-“ not “I-“, in other words, the valid pattern should be “O B-label” (表中  的值非常的小。）</p>
+<p>&emsp;&emsp;&emsp;确切的说，这个矩阵是 BiLSTM-CRF 模型的一个参数。在你训练模型之前，你可以随机地初始化矩阵中所有的 transition score。在之后的训练过程中，这些随机初始化的 score 将会被自动更新。换句话说，CRF 层可以自己学习到这些约束。我们并不需要手动创建这样一个矩阵。这些分数值会随着训练的迭代次数的增加，变得越来越 “合理”。</p>
+<h2 id="2-3-CRF-loss-function"><a href="#2-3-CRF-loss-function" class="headerlink" title="2.3 CRF loss function"></a>2.3 CRF loss function</h2><p>&emsp;&emsp;&emsp;CRF 的损失函数由 真实转移路径值 和 所有可能转移路径值两部分组成。真实路径表示在所有可能转移路径中具有最高 score 的路径。</p>
+<p>&emsp;&emsp;&emsp;假如我们的数据集中有这样一些标记：<br><img src="https://img-blog.csdnimg.cn/20191029193508950.png" alt="图2-4"></p>
+<p>&emsp;&emsp;&emsp;我们也有一个由 5 个单词组成的句子，那么标签的可能转移路径有：</p>
+<p>&emsp;&emsp;&emsp;1.START B-Person B-Person B-Person B-Person B-Person END</p>
+<p>&emsp;&emsp;&emsp;2.START B-Person I-Person B-Person B-Person B-Person END</p>
+<p>&emsp;&emsp;&emsp;…</p>
+<p>&emsp;&emsp;&emsp;10.START B-Person I-Person O B-Organization O END</p>
+<p>&emsp;&emsp;&emsp;…</p>
+<p>&emsp;&emsp;&emsp;N.O O O O O O O</p>
+<p>&emsp;&emsp;&emsp;假定每一个可能的路径有一个分数值 P_i, 那么对于所有 N 条可能的路径的总分数值为 P<sub>total</sub> = P<sub>1</sub> + P<sub>2</sub>+ P<sub>3</sub> + … +P<sub>N</sub> = e<sup>S<sub>1</sub></sup> + e<sup>S<sub>2</sub></sup> + e<sup>S<sub>3</sub></sup> + … + e<sup>S<sub>N</sub></sup>，e 是数学常量 e。（在 2.4 节，我们会讨论如何计算 S<sub>1</sub>，你也可以将它直接作为该路径的分数值。）</p>
+<p>&emsp;&emsp;&emsp;假如这里的第十条路径是真实的路径，换句话说，第十条路径是训练集提供的“黄金准则”。那么， P<sub>10</sub> 就应该在所有的路径分数值之和中占据最大的比例。</p>
+<p>&emsp;&emsp;&emsp;下面给出方程便是我们一直讨论的 Loss Function，在训练阶段，BiLSTM-CRF 模型的参数值将会一直不停的被更新，来提高真实路径的分数值所占的比重。</p>
+<p>&emsp;&emsp;&emsp;L<sub>oss</sub>F<sub>untion</sub> = P<sub>R</sub><sub>eal</sub>P<sub>ath</sub>/P<sub>1</sub> + P<sub>1</sub>  + P<sub>2</sub> +P<sub>3</sub>  +P<sub>4</sub>  +…+P<sub>N</sub> </p>
+<p>&emsp;&emsp;&emsp;现在，问题是：</p>
+<p>&emsp;&emsp;&emsp;1）如何定义路径的分数？</p>
+<p>&emsp;&emsp;&emsp;2）如何计算所有可能路径的总分？</p>
+<p>&emsp;&emsp;&emsp;3）当我们计算总分时，是否必须列出所有可能的路径？（此问题的答案为否。）</p>
+<p>&emsp;&emsp;&emsp;在以下各节中，我们将看到如何解决这些问题。</p>
+<h1 id="下一个"><a href="#下一个" class="headerlink" title="下一个"></a>下一个</h1><h2 id="2-4-真实路径得分"><a href="#2-4-真实路径得分" class="headerlink" title="2.4 真实路径得分"></a>2.4 真实路径得分</h2><p>&emsp;&emsp;&emsp;如何计算句子的真实标签的分数。</p>
+<h2 id="2-5-所有可能路径的分数"><a href="#2-5-所有可能路径的分数" class="headerlink" title="2.5 所有可能路径的分数"></a>2.5 所有可能路径的分数</h2><p>&emsp;&emsp;&emsp;如何通过分步玩具示例计算句子所有可能路径的总分。</p>
+<p>&emsp;&emsp;&emsp;</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/10/29/BiLSTM%E6%A8%A1%E5%9E%8B%E4%B8%ADCRF%E5%B1%82%E7%9A%84%E8%BF%90%E8%A1%8C%E5%8E%9F%E7%90%86-1/" rel="next" title="BiLSTM模型中CRF层的运行原理-1">
+                <i class="fa fa-chevron-left"></i> BiLSTM模型中CRF层的运行原理-1
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">John Doe</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-name">posts</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#上节回顾："><span class="nav-number">1.</span> <span class="nav-text">上节回顾：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-CRF层"><span class="nav-number">2.</span> <span class="nav-text">1.CRF层</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-Emission-Score"><span class="nav-number">3.</span> <span class="nav-text">1.1 Emission Score</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-CRF-loss-function"><span class="nav-number">4.</span> <span class="nav-text">2.3 CRF loss function</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#下一个"><span class="nav-number"></span> <span class="nav-text">下一个</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-4-真实路径得分"><span class="nav-number">1.</span> <span class="nav-text">2.4 真实路径得分</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-5-所有可能路径的分数"><span class="nav-number">2.</span> <span class="nav-text">2.5 所有可能路径的分数</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a></div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
