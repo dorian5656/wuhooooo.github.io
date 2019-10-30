@@ -5,7 +5,7 @@
   
 
 
-<html class="theme-next muse use-motion" lang="en">
+<html class="theme-next muse use-motion" lang="zh-CN">
 <head>
   <meta charset="UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -79,18 +79,18 @@
 
 
 
-<meta name="description" content="本文框架如下： 介绍——在命名实体识别任务中，BiLSTM模型中CRF层的通用思想 详细的实例——通过实例来一步步展示CRF的工作原理 实现——CRF层的一步步实现过程 谁可以读本文——本文适用与NLP初级入门者或者AI其他相关领域 需要有的基础知识：你只需要知道什么是命名实体识别，如果你不懂神经网络，条件随机场（CRF）或者其它相关知识，不必担心，本文将向你展示CRF层是如何工作的。本文将尽可能">
+<meta name="description" content="&amp;lt;!– more –&amp;gt;本文框架如下： 介绍——在命名实体识别任务中，BiLSTM模型中CRF层的通用思想 详细的实例——通过实例来一步步展示CRF的工作原理 实现——CRF层的一步步实现过程 谁可以读本文——本文适用与NLP初级入门者或者AI其他相关领域 需要有的基础知识：你只需要知道什么是命名实体识别，如果你不懂神经网络，条件随机场（CRF）或者其它相关知识，不必担心，本文将向你展示">
 <meta property="og:type" content="article">
 <meta property="og:title" content="BiLSTM模型中CRF层的运行原理-1">
 <meta property="og:url" content="http:&#x2F;&#x2F;yoursite.com&#x2F;2019&#x2F;10&#x2F;29&#x2F;BiLSTM%E6%A8%A1%E5%9E%8B%E4%B8%ADCRF%E5%B1%82%E7%9A%84%E8%BF%90%E8%A1%8C%E5%8E%9F%E7%90%86-1&#x2F;index.html">
 <meta property="og:site_name" content="数据处理中心">
-<meta property="og:description" content="本文框架如下： 介绍——在命名实体识别任务中，BiLSTM模型中CRF层的通用思想 详细的实例——通过实例来一步步展示CRF的工作原理 实现——CRF层的一步步实现过程 谁可以读本文——本文适用与NLP初级入门者或者AI其他相关领域 需要有的基础知识：你只需要知道什么是命名实体识别，如果你不懂神经网络，条件随机场（CRF）或者其它相关知识，不必担心，本文将向你展示CRF层是如何工作的。本文将尽可能">
-<meta property="og:locale" content="en">
+<meta property="og:description" content="&amp;lt;!– more –&amp;gt;本文框架如下： 介绍——在命名实体识别任务中，BiLSTM模型中CRF层的通用思想 详细的实例——通过实例来一步步展示CRF的工作原理 实现——CRF层的一步步实现过程 谁可以读本文——本文适用与NLP初级入门者或者AI其他相关领域 需要有的基础知识：你只需要知道什么是命名实体识别，如果你不懂神经网络，条件随机场（CRF）或者其它相关知识，不必担心，本文将向你展示">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https:&#x2F;&#x2F;img-blog.csdnimg.cn&#x2F;20191029152908620.png">
 <meta property="og:image" content="https:&#x2F;&#x2F;img-blog.csdnimg.cn&#x2F;20191029160158167.png">
 <meta property="og:image" content="https:&#x2F;&#x2F;img-blog.csdnimg.cn&#x2F;20191029161604641.jpg">
 <meta property="og:image" content="https:&#x2F;&#x2F;img-blog.csdnimg.cn&#x2F;20191029161620568.jpg">
-<meta property="og:updated_time" content="2019-10-29T09:15:42.661Z">
+<meta property="og:updated_time" content="2019-10-30T01:20:34.827Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https:&#x2F;&#x2F;img-blog.csdnimg.cn&#x2F;20191029152908620.png">
 
@@ -140,7 +140,7 @@
 
 </head>
 
-<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
 
   
   
@@ -238,7 +238,7 @@
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/10/29/BiLSTM%E6%A8%A1%E5%9E%8B%E4%B8%ADCRF%E5%B1%82%E7%9A%84%E8%BF%90%E8%A1%8C%E5%8E%9F%E7%90%86-1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="John Doe">
+      <meta itemprop="name" content="Wu hao">
       <meta itemprop="description" content="">
       <meta itemprop="image" content="/images/avatar.gif">
     </span>
@@ -302,7 +302,7 @@
       
 
       
-        <p>本文框架如下：</p>
+        <p>&lt;!– more –&gt;<br>本文框架如下：</p>
 <p>介绍——在命名实体识别任务中，BiLSTM模型中CRF层的通用思想</p>
 <p>详细的实例——通过实例来一步步展示CRF的工作原理</p>
 <p>实现——CRF层的一步步实现过程</p>
@@ -430,7 +430,7 @@
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
-              <p class="site-author-name" itemprop="name">John Doe</p>
+              <p class="site-author-name" itemprop="name">Wu hao</p>
               <p class="site-description motion-element" itemprop="description"></p>
           </div>
 
@@ -502,7 +502,7 @@
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>
-  <span class="author" itemprop="copyrightHolder">John Doe</span>
+  <span class="author" itemprop="copyrightHolder">Wu hao</span>
 
   
 </div>
